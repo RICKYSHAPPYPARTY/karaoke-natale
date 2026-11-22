@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#5b21b6">
+  <title>Ricky's Happy Party - Karaoke Battle</title>
+  <style>
+    :root{--bg:#f7f3ff;--card:#fff;--ink:#24133f;--muted:#756b83;--purple:#6526c7;--pink:#df3b8d;--gold:#f4bd36;--line:#e8def4;--ok:#18784b;--bad:#b42318}
+    *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);background:linear-gradient(145deg,#f7f3ff,#fff1f7);min-height:100vh}
+    .wrap{width:min(760px,100%);margin:auto;padding:16px 14px 48px}.hero{padding:24px 20px;border-radius:22px;color:#fff;background:linear-gradient(135deg,var(--purple),var(--pink));box-shadow:0 14px 35px #5d25aa35;text-align:center}.hero h1{margin:0 0 6px;font-size:clamp(26px,7vw,42px)}.hero p{margin:0;opacity:.92}
+    .code,.team,.state{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:17px;margin-top:14px;box-shadow:0 7px 22px #3f255310}.code label{display:block;font-weight:800;margin-bottom:7px}.code input{width:100%;font:inherit;font-size:19px;text-transform:uppercase;letter-spacing:1.5px;padding:13px;border:2px solid #d7c7e9;border-radius:12px;color:var(--ink);background:#fff}.code small{display:block;color:var(--muted);margin-top:6px}
+    .team-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.team h2{font-size:20px;margin:0 0 4px}.members{color:var(--muted);font-size:14px}.badge{white-space:nowrap;border-radius:999px;padding:5px 9px;background:#f0e7ff;color:var(--purple);font-size:12px;font-weight:800}
+    .stars{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-top:14px}.star{appearance:none;border:1px solid #e5d4a0;background:#fffaf0;color:#76510d;border-radius:12px;padding:13px 3px;font:800 16px inherit;cursor:pointer}.star.selected{background:var(--gold);border-color:var(--gold);color:#382300;transform:translateY(-1px)}.star:focus-visible,.send:focus-visible,input:focus-visible{outline:3px solid #8c63db66;outline-offset:2px}
+    .send{width:100%;border:0;border-radius:14px;background:var(--purple);color:#fff;padding:15px;font:800 18px inherit;cursor:pointer;margin-top:16px;box-shadow:0 9px 20px #6526c738}.send:disabled{opacity:.55;cursor:not-allowed}.msg{min-height:24px;margin-top:12px;text-align:center;font-weight:750}.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}.loading{text-align:center;color:var(--muted);padding:25px}.hidden{display:none}.success{text-align:center;padding:28px}.success .icon{font-size:58px}.success h2{font-size:28px;margin:8px 0}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:22px}
+    @media(prefers-color-scheme:dark){:root{--bg:#15101e;--card:#241b30;--ink:#fbf7ff;--muted:#c1b5cb;--line:#40344f}body{background:linear-gradient(145deg,#15101e,#281523)}.code input{background:#17111f;color:#fff;border-color:#51415f}.star{background:#332918;color:#ffd66e;border-color:#655026}.badge{background:#39265a;color:#dabfff}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <header class="hero"><h1>🎤 Karaoke Battle</h1><p>Ricky's Happy Party · Vota tutte le esibizioni</p></header>
+  <section id="app">
+    <div class="code"><label for="code">Il tuo codice monouso</label><input id="code" maxlength="8" autocomplete="off" inputmode="text" placeholder="XMAS-001"><small>Il codice può essere usato una sola volta.</small></div>
+    <div id="teams" class="loading">Caricamento squadre…</div>
+    <button id="send" class="send" type="button" disabled>Invia i miei voti</button>
+    <div id="msg" class="msg" aria-live="polite"></div>
+  </section>
+  <section id="done" class="state success hidden"><div class="icon">✅</div><h2>Voti registrati!</h2><p>Grazie per aver partecipato alla Karaoke Battle.</p></section>
+  <div class="footer">La classifica sarà svelata al termine delle esibizioni.</div>
+</main>
+<script src="config.js"></script>
+<script>
+(() => {
+  const app=document.querySelector('#app'), done=document.querySelector('#done'), box=document.querySelector('#teams'), send=document.querySelector('#send'), msg=document.querySelector('#msg'), code=document.querySelector('#code');
+  let teams=[], votes={};
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const message=(text,type='')=>{msg.textContent=text;msg.className='msg '+type};
+  const ready=()=>teams.length>0 && teams.every(t=>votes[t.id]) && /^XMAS-\d{3}$/.test(code.value.trim().toUpperCase());
+  function update(){send.disabled=!ready()}
+  function draw(){box.className='';box.innerHTML=teams.map((t,i)=>`<article class="team"><div class="team-head"><div><h2>${esc(t.nome)}</h2><div class="members">${esc(t.componenti||'Componenti da definire')}</div></div><span class="badge">Esibizione ${i+1}</span></div><div class="stars" role="group" aria-label="Voto per ${esc(t.nome)}">${[1,2,3,4,5].map(n=>`<button type="button" class="star ${votes[t.id]===n?'selected':''}" data-id="${t.id}" data-score="${n}" aria-label="${n} su 5">${n} ★</button>`).join('')}</div></article>`).join('');box.querySelectorAll('.star').forEach(b=>b.addEventListener('click',()=>{votes[b.dataset.id]=Number(b.dataset.score);draw();update()}));}
+  async function api(path,options={}){const cfg=window.KARAOKE_CONFIG||{};if(!cfg.supabaseUrl||!cfg.supabaseAnonKey||cfg.supabaseUrl.includes('INSERISCI'))throw new Error('Configurazione Supabase non completata');const r=await fetch(cfg.supabaseUrl+'/rest/v1/'+path,{...options,headers:{apikey:cfg.supabaseAnonKey,Authorization:'Bearer '+cfg.supabaseAnonKey,'Content-Type':'application/json',...(options.headers||{})}});const text=await r.text();let data;try{data=text?JSON.parse(text):null}catch{data=text}if(!r.ok)throw new Error(data?.message||data?.error_description||'Errore di collegamento');return data}
+  async function load(){try{teams=await api('squadre?select=id,nome,componenti,ordine&attiva=eq.true&order=ordine.asc');if(!teams.length)throw new Error('Nessuna squadra attiva');draw();update()}catch(e){box.className='state';box.textContent='Impossibile caricare le squadre. '+e.message;message('Controlla la configurazione del sito.','bad')}}
+  code.addEventListener('input',()=>{code.value=code.value.toUpperCase().replace(/\s/g,'').slice(0,8);update()});
+  send.addEventListener('click',async()=>{message('');if(!ready()){message('Inserisci il codice e assegna un voto a tutte le squadre.','bad');return}send.disabled=true;send.textContent='Invio in corso…';try{await api('rpc/invia_voti',{method:'POST',body:JSON.stringify({p_codice:code.value.trim().toUpperCase(),p_voti:teams.map(t=>({squadra_id:t.id,voto:votes[t.id]}))})});app.classList.add('hidden');done.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}catch(e){message(e.message,'bad');send.textContent='Invia i miei voti';update()}});
+  load();
+})();
+</script>
+</body>
+</html>
